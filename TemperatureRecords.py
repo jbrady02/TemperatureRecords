@@ -1,4 +1,13 @@
 #!/usr/bin/python3
+"""Find the maximum or minimum temperature at a weather station for a user
+specified timeframe.
+
+TemperatureRecords.py [weather station identifier] [time zone]
+[earliest year] [temperature (max or min)] [timeframe] [data_year]
+[data_month] [data_day] [unit (c or f)]
+Read README.md for more information about the parameters.
+"""
+
 import urllib.request
 import datetime
 import sqlite3
@@ -6,81 +15,77 @@ import re
 import sys
 
 
-def remove_year(data_year, date_time, temperature):
+def remove_year(data_year, date_time, temperature) -> None:
     """
     If the index of date_time contains a year not in data_year, pop the
     index from data_time and temperature.
     """
     size = len(date_time)
     index = 0
-    while (index < size):
-        if (data_year not in date_time[index]):
+    while index < size:
+        if data_year not in date_time[index]:
             date_time.pop(index)
             temperature.pop(index)
-            size = size - 1
+            size -= 1
         else:
-            index = index + 1
+            index += 1
 
 
-def remove_month(data_month, date_time, temperature):
+def remove_month(data_month, date_time, temperature) -> None:
     """
     If the index of date_time contains a month not in data_month, pop the
     index from data_time and temperature.
     """
     size = len(date_time)
     index = 0
-    while (index < size):
-        if ("-" + data_month + "-" not in date_time[index]):
+    while index < size:
+        if "-" + data_month + "-" not in date_time[index]:
             date_time.pop(index)
             temperature.pop(index)
-            size = size - 1
+            size -= 1
         else:
-            index = index + 1
+            index += 1
 
 
-def remove_day(data_day, date_time, temperature):
+def remove_day(data_day, date_time, temperature) -> None:
     """
     If the index of date_time contains a day not in data_day, pop the
     index from data_time and temperature.
     """
     size = len(date_time)
     index = 0
-    while (index < size):
-        if ("-" + data_day + " " not in date_time[index]):
+    while index < size:
+        if "-" + data_day + " " not in date_time[index]:
             date_time.pop(index)
             temperature.pop(index)
-            size = size - 1
+            size -= 1
         else:
-            index = index + 1
+            index += 1
 
 
-def remove_null(date_time, temperature):
+def remove_null(date_time, temperature) -> None:
     """
     If the index of date_time or temperature contains null, pop the
     index from data_time and temperature.
     """
     size = len(date_time)
     index = 0
-    while (index < size):
-        if ("null" in date_time[index] or "null" in temperature[index]):
+    while index < size:
+        if "null" in date_time[index] or "null" in temperature[index]:
             date_time.pop(index)
             temperature.pop(index)
-            size = size - 1
+            size -= 1
         else:
-            index = index + 1
+            index += 1
 
 
-def main():
+def main() -> None:
     """
-    Find the maximum or minimum temperature at a weather station for a user
-    specified timeframe.
-    TemperatureRecords.py [weather station identifier] [time zone]
-    [earliest year] [temperature (max or min)] [timeframe] [data_year]
-    [data_month] [data_day] [unit (c or f)]
-    Read README.md for more information about the parameters.
+    Get the user arguments, make the URL, format the data, make the database,
+    and print the result.
     """
     # If all 10 command line arguments exists, assign them to variables
-    if (len(sys.argv) == 10):
+    if len(sys.argv) == 10:
         station_id = sys.argv[1]
         time_zone = sys.argv[2]
         year = sys.argv[3]
@@ -106,16 +111,16 @@ def main():
         year = input("Please enter the earliest year that you "
                      "want the data from."
                      "\nThe earliest allowed and default year is 1928.\n")
-        if (year == ""):
+        if year == "":
             year = "1928"
         invalid_max_or_min = True
-        while (invalid_max_or_min):
+        while invalid_max_or_min:
             max_or_min = input("Please enter max for maximum temperature "
                                "or min for minimum temperature.\n")
-            if (max_or_min.lower() == 'max' or max_or_min.lower() == 'min'):
+            if max_or_min.lower() == 'max' or max_or_min.lower() == 'min':
                 invalid_max_or_min = False
         invalid_timeframe = True
-        while (invalid_timeframe):
+        while invalid_timeframe:
             timeframe = input("What timeframe do you want the " + max_or_min +
                               " temperature for?\n"
                               "all - All time\nyear - Entire year"
@@ -135,7 +140,7 @@ def main():
                 timeframe == "single-day" or timeframe == "every-day"):
             data_month = input("What month do you want the "
                                "data for? (format: MM)\n")
-        if (timeframe == "single-day" or timeframe == "every-day"):
+        if timeframe == "single-day" or timeframe == "every-day":
             data_day = input(
                 "What day do you want the data for? (format: DD)\n")
         unit = input("Please enter c for degrees Celsius "
@@ -144,7 +149,7 @@ def main():
     # Get the current year and request the data
     datetime.date.today()
     max_year = datetime.date.today().year
-    if (timeframe == "single_day"):
+    if timeframe == "single_day":
         url = ("https://mesonet.agron.iastate.edu/cgi-bin/request/"
                "asos.py?station=" + station_id + "&data=tmp" + unit +
                "&year1=" + data_year + "&month1=" + data_month + "&day1=" +
@@ -225,17 +230,16 @@ def main():
     con.commit()
 
     # Print the requested data
-    query = ("SELECT " + max_or_min + "(temperature) FROM temperatures")
+    query = "SELECT " + max_or_min + "(temperature) FROM temperatures"
     select = cur.execute(query)
     result = select.fetchone()
-    for x in result:
-        if (str(x) == "None"):
+    for result_temperature in result:
+        if str(result_temperature) == "None":
             print("No data was found.")
         else:
             print("The " + max_or_min + "imum temperature at " +
                   station_id + " for the " + "requested timeframe is " +
-                  str(x) + "°" + unit.upper() + ".")
-        return (x)
+                  str(result_temperature) + "°" + unit.upper() + ".")
 
 
 if __name__ == "__main__":
